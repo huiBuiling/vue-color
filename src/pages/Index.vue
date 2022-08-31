@@ -2,7 +2,10 @@
   <div class="home">
     <div class="left">
       <div class="avatar">
-        <div class="avatar-payload" v-html="svgContent" />
+        <div class="view" v-for="(item, index) in slideJson.slice(0, 2)" :key="index">
+          <div class="view" :class="item[0].widgetType" v-html="item[0].svgRaw" />
+        </div>
+        <!-- <div class="avatar-payload" v-html="slideJson[0].svgRaw" /> -->
       </div>
 
       <!-- opera_group  -->
@@ -75,11 +78,33 @@ const actions = computed(() => [
     padding-top: 150px;
 
     .avatar {
+      position: relative;
       width: 280px;
       height: 280px;
       background: #fff;
       border-radius: 5px;
       margin: 0 auto;
+      overflow: hidden;
+    }
+
+    .view{
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .face{}
+    .tops{
+      top: -60px;
+      left: -28px;
+    }
+
+    svg{
+      width: 80%;
+      height: 80%;
+      margin: 10%;
     }
 
     .opera_group {
@@ -125,7 +150,7 @@ const actions = computed(() => [
   .right {
     width: 300px;
     border-left: 1px solid #3c3b3b;
-    padding: 0 20px;
+    padding: 0 20px 60px;
     text-align: left;
     overflow-y: auto;
 
@@ -157,12 +182,12 @@ const actions = computed(() => [
     .con_item:hover {
       border: 1px solid #6967fe;
     }
-  }
 
-  svg {
-    width: 80%;
-    height: 80%;
-    margin: 10%;
+    svg {
+      width: 80%;
+      height: 80%;
+      margin: 10%;
+    }
   }
 }
 </style>
