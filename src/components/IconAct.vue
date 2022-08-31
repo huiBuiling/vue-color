@@ -1,5 +1,5 @@
 <template>
-  <svg-icon v-if="props.icon" :name="props.icon" />
+  <svg-icon v-if="props.icon" :name="props.icon" :class="props.class" />
 </template>
 
 <script setup>
