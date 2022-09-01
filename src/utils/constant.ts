@@ -7,24 +7,47 @@ import {  ClothesShape,
   MouthShape,
   NoseShape,
   TopsShape,
+  AvatarType
 } from "./shapeEnum";
 
 import { AvatarOption, NONE } from "./shapeBaseTypes";
 
 // -----------------------------------------------
 // 层级index
-export const AVATAR_Index: Readonly<{}> = {
-  'face': 1,
-  'eyes': 2,
-  'nose': 3,
-  'eyebrows': 4,
-  'tops': 5,
-  'glasses': 6,
-  'mouth': 7,
-  'ear': 8,
-  'earrings': 9,
-  'beard': 10,
-  'clothes': 11,
+export const AVATAR_Index: Readonly<{[key in `${AvatarType}`]: { zIndex: number }}> = {
+  [AvatarType.Face]: {
+    zIndex: 1,
+  },
+  [AvatarType.Ear]: {
+    zIndex: 8,
+  },
+  [AvatarType.Earrings]: {
+    zIndex: 9,
+  },
+  [AvatarType.Eyebrows]: {
+    zIndex: 4,
+  },
+  [AvatarType.Eyes]: {
+    zIndex: 2,
+  },
+  [AvatarType.Nose]: {
+    zIndex: 3,
+  },
+  [AvatarType.Glasses]: {
+    zIndex: 6,
+  },
+  [AvatarType.Mouth]: {
+    zIndex: 7,
+  },
+  [AvatarType.Beard]: {
+    zIndex: 10,
+  },
+  [AvatarType.Tops]: {
+    zIndex: 5,
+  },
+  [AvatarType.Clothes]: {
+    zIndex: 11,
+  },
 }
 
 // 渲染各部位可选属性

@@ -1,7 +1,7 @@
 <template>
   <div class="home">
     <div class="left">
-      <div class="avatar">
+      <div class="avatar" :style="{background: bgColor}">
         <!-- <div class="view" v-for="(item, index) in slideJson.slice(0, 2)" :key="index">
           <div class="view" :class="item[0].widgetType" v-html="item[0].svgRaw" />
         </div> -->
@@ -27,10 +27,22 @@
 
     <!-- 可视化块 -->
     <div class="right">
-      <div class="view" v-for="(item, index) in slideJson" :key="index">
-        <div class="t_title">头发</div>
+      <div class="view">
+        <div class="t_title">背景色</div>
         <div class="t_con">
-          <div class="con_item" v-for="itemC in item" :key="itemC.widgetShape" v-html="itemC.svgRaw" @click="onChange(itemC.widgetType, itemC.widgetShape)"></div>
+          <color-picker :defaultColor="bgColor" @change="changeColor($event, 'BG')" :value="bgColor" />
+        </div>
+      </div>
+      <div class="view" v-for="item in slideJson" :key="item.type">
+        <div class="t_title">{{item.name}}</div>
+        <div v-if="['tops', 'clothes', 'nose', 'glasses'].includes(item.type)">
+          <color-picker :show-opacity="false" :defaultColor="item.type === 'tops' ? hairColor: clothesColor" @change="changeColor($event, item.type)" :value="item.type === 'tops' ? hairColor: clothesColor" />
+        </div>
+        <div class="t_con">
+          <div class="con_item" 
+          :class="{active: activeShape[item.type] === itemC.widgetShape, none: itemC.widgetShape === 'none'}"
+          v-for="(itemC, index) in item.data" 
+          :key="index" v-html="itemC.svgRaw" @click="onChange(itemC.widgetType, itemC.widgetShape)"></div>
         </div>
       </div>
     </div>
@@ -39,14 +51,17 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watchEffect } from 'vue'
+import ColorPicker from 'colorpicker-v3'
+
 import IconPrev from '@/assets/group/icons/icon-back.svg'
 import IconCode from '@/assets/group/icons/icon-next.svg'
-// import { iconsStore } from '@/store/icons'
-import { types, slideJson } from '@/utils/slide'
+import { slideJson } from '@/utils/slide'
 import { svgData } from '@/utils/dynamic-data'
 import { AvatarOption, NONE } from "@/utils/shapeBaseTypes";
 import { initAvatarData } from "@/utils/initData";
 import { AVATAR_Index } from "@/utils/constant";
+
+// import { iconsStore } from '@/store/icons'
 
 // const store = iconsStore()
 // const name = computed(() => store.name)
@@ -73,14 +88,49 @@ const avatarOption: AvatarOption = reactive({
   widgets: initAvatarData
 })
 
+const hex = ref("");
+const bgColor = ref('#FFEBA4')
+const hairColor = ref('#FC909F')
+const clothesColor = ref('#F48150')
+
 // 渲染avatar
 const svgContent = ref('')
 
 // 选中项
 const activeShape = ref({
-  type: '',
-  shape: ''
+  face: 'base',
+  tops: 'wave',
+  ear: 'detached',
+  earrings: 'hoop',
+  eyebrow: 'eyelashesdown',
+  eyes: 'eyeshadow',
+  nose: 'curve',
+  glasses: 'none',
+  mouth: 'nervous',
+  beard: 'none',
+  clothes: 'collared',
 })
+
+const changeColor = (e: {hex: string, rgba: string}, type: string) => {
+  if(type === 'BG') {
+    bgColor.value = e.rgba
+  } else {
+    console.log('changeColor', e.rgba, type)
+    hairColor.value = e.hex
+
+    const _cur = {
+      ...avatarOption.widgets,
+      [type]: {
+        ...avatarOption.widgets[type],
+        fillColor: e.hex,
+      }
+    }
+    avatarOption.widgets = _cur
+    console.log(`output->avatarOption`,avatarOption)
+  }
+}
+
+
 
 // 切换
 const onChange = (type: string, shape: string) => {
@@ -92,10 +142,13 @@ const onChange = (type: string, shape: string) => {
       "shape": shape,
     }
   }
+
+  activeShape.value[type] = shape
   avatarOption.widgets = _cur
   console.log(`output->avatarOption`,avatarOption)
 }
 
+// 导入svg数据
 const getSvgInitData = () => {
   // 层级处理
   const sortedList = Object.entries(avatarOption.widgets).sort(
@@ -110,7 +163,6 @@ const getSvgInitData = () => {
     async ([widgetType, opt]) => {
       if (opt.shape !== NONE && svgData?.[widgetType]?.[opt.shape]) {
         const _cur = svgData[widgetType][opt.shape]
-
         // () => import('/src/assets/widgets/face/base.svg?import&raw')
         return (await _cur()).default
       }
@@ -120,6 +172,7 @@ const getSvgInitData = () => {
   return {cur, sortedList}
 }
 
+// 获取渲染svg
 const getSvgRawList = async () => {
   // 获取所有svg
   const svgInitData = getSvgInitData()
@@ -145,12 +198,16 @@ const getSvgRawList = async () => {
         * .replaceAll(searchValue, replaceValue)
         * 部分部位svg 存在：fill="$fillColor" -> 替换为 widgetFillColor
         */
+
+      // if(svgInitData?.sortedList[i][1]) {
+      //   console.log(`output->glasses`,svgInitData?.sortedList[i][1])
+      // }
       const widgetFillColor = svgInitData?.sortedList[i][1].fillColor
       let content = svgRaw
         .slice(svgRaw.indexOf('>', svgRaw.indexOf('<svg')) + 1)
         .replace('</svg>', '').replaceAll(
         '$fillColor',
-        widgetFillColor || 'transparent'
+        widgetFillColor || '#000000'
       )
 
       /**
@@ -196,6 +253,8 @@ watchEffect(async () => {
 </script>
 
 <style lang="scss">
+  @import 'colorpicker-v3/dist/style.css';
+
 .home {
   width: 100%;
   height: 100%;
@@ -288,11 +347,30 @@ watchEffect(async () => {
   }
 
   .right {
-    width: 300px;
+    width: 326px;
     border-left: 1px solid #3c3b3b;
     padding: 0 20px 60px;
     text-align: left;
     overflow-y: auto;
+
+    &::-webkit-scrollbar {
+      width: 4px;
+      height: 6px;
+    }
+    // 滚动区域背景
+    &::-webkit-scrollbar-track-piece {
+      background-color: rgb(17, 16, 16);
+      background-color: white;
+      -webkit-border-radius: 6px;
+    }
+  
+    // 竖向滚动条
+    &::-webkit-scrollbar-thumb:vertical {
+      height: 5px;
+      background-color: rgb(70, 68, 68);
+      background-color: #AAAAAA;
+      -webkit-border-radius: 6px;
+    }
 
     .t_title {
       font-size: 16px;
@@ -308,10 +386,12 @@ watchEffect(async () => {
     }
 
     .con_item {
-      width: 25%;
-      height: 5rem;
-      background-color: #2c323a;
-      border: 1px solid #2c323a;
+      width: 80px;
+      height: 80px;
+      // background-color: #2c323a;
+      // border: 1px solid #2c323a;
+      background-color: #2b2c2e26;
+      border: 1px solid #2b2c2e26;
       border-radius: 10px;
       margin: 10px;
       cursor: pointer;
@@ -327,6 +407,13 @@ watchEffect(async () => {
       width: 80%;
       height: 80%;
       margin: 10%;
+    }
+
+    .none {
+      font-size: 30px;
+      line-height: 80px;
+      text-align: center;
+      font-weight: normal;
     }
   }
 }

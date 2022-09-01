@@ -2,6 +2,8 @@
 
 # 项目开发
 
+## 参考这个大大的作品：https://github.com/Codennnn/vue-color-avatar
+
 ## Vue 3 + TypeScript + Vite
 
 ```sh
