@@ -1,7 +1,7 @@
 <template>
   <div class="home">
     <div class="left">
-      <div class="avatar" :style="{background: bgColor}">
+      <div class="avatar" :style="{background: bgColor}" ref="avatarRef">
         <!-- <div class="view" v-for="(item, index) in slideJson.slice(0, 2)" :key="index">
           <div class="view" :class="item[0].widgetType" v-html="item[0].svgRaw" />
         </div> -->
@@ -19,9 +19,9 @@
 
       <!-- btn_group -->
       <div class="btn_group">
-        <div class="btn_i btn_1">随机生成</div>
-        <div class="btn_i btn_2">下载头像</div>
-        <div class="btn_i btn_3">批量生成</div>
+        <button class="btn_i btn_1">随机生成</button>
+        <button class="btn_i btn_2" :disabled="downloading" @click="handleDownload">下载头像</button>
+        <button class="btn_i btn_3">批量生成</button>
       </div>
     </div>
 
@@ -111,6 +111,7 @@ const activeShape = ref({
   clothes: 'collared',
 })
 
+// 切换颜色
 const changeColor = (e: {hex: string, rgba: string}, type: string) => {
   if(type === 'BG') {
     bgColor.value = e.rgba
@@ -130,9 +131,7 @@ const changeColor = (e: {hex: string, rgba: string}, type: string) => {
   }
 }
 
-
-
-// 切换
+// 切换选项
 const onChange = (type: string, shape: string) => {
   console.log(`output->onChange`,type, shape)
   const _cur = {
@@ -250,6 +249,31 @@ watchEffect(async () => {
   // console.log('svgContent', svgContent)
 })
 
+const downloading = ref(false)
+const avatarRef = ref(null);
+// 下载图片
+async function handleDownload() {
+  try {
+    downloading.value = true
+    const avatarEle = avatarRef.value
+
+    if (avatarEle) {
+      const html2canvas = (await import('html2canvas')).default
+      const canvas = await html2canvas(avatarEle, {
+        backgroundColor: null,
+      })
+      const dataURL = canvas.toDataURL()
+      const trigger = document.createElement('a')
+      trigger.href = dataURL
+      trigger.download = 'avatar.png'
+      trigger.click()
+    }
+  } finally {
+    setTimeout(() => {
+      downloading.value = false
+    }, 800)
+  }
+}
 </script>
 
 <style lang="scss">
@@ -338,11 +362,13 @@ watchEffect(async () => {
     }
 
     .btn_i {
-      width: 80px;
+      width: 100px;
       padding: 10px;
       background-color: #404854;
       border-radius: 10px;
       font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
     }
   }
 
