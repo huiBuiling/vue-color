@@ -1,7 +1,7 @@
 <template>
   <div class="home">
     <div class="left">
-      <div class="avatar" :style="{background: bgColor}" ref="avatarRef">
+      <div class="avatar" :style="{background: bgColor, transform: `rotateY(${isRotate ? '180deg':'0deg'})`}" ref="avatarRef">
         <!-- <div class="view" v-for="(item, index) in slideJson.slice(0, 2)" :key="index">
           <div class="view" :class="item[0].widgetType" v-html="item[0].svgRaw" />
         </div> -->
@@ -15,11 +15,13 @@
       <div class="opera_group">
         <div class="opera_group_i prev"><img :src="actions[0].icon" :alt="actions[0].tip" /></div>
         <div class="opera_group_i next"><img :src="actions[1].icon" :alt="actions[1].tip" /></div>
+        <div class="opera_group_i" @click="handleRotate"><img :src="actions[2].icon" :alt="actions[2].tip" /></div>
+        <div class="opera_group_i" @click="handleCode"><img :src="actions[3].icon" :alt="actions[3].tip" /></div>
       </div>
 
       <!-- btn_group -->
       <div class="btn_group">
-        <button class="btn_i btn_1">随机生成</button>
+        <button class="btn_i btn_1" @click="randomize">随机生成</button>
         <button class="btn_i btn_2" :disabled="downloading" @click="handleDownload">下载头像</button>
         <button class="btn_i btn_3">批量生成</button>
       </div>
@@ -46,6 +48,9 @@
         </div>
       </div>
     </div>
+
+    <!-- 代码块 -->
+    
   </div>
 </template>
 
@@ -54,7 +59,10 @@ import { computed, reactive, ref, watchEffect } from 'vue'
 import ColorPicker from 'colorpicker-v3'
 
 import IconPrev from '@/assets/group/icons/icon-back.svg'
-import IconCode from '@/assets/group/icons/icon-next.svg'
+import IconNext from '@/assets/group/icons/icon-next.svg'
+import IconFlip from '@/assets/group/icons/icon-flip.svg'
+import IconCode from '@/assets/group/icons/icon-code.svg'
+
 import { slideJson } from '@/utils/slide'
 import { svgData } from '@/utils/dynamic-data'
 import { AvatarOption, NONE } from "@/utils/shapeBaseTypes";
@@ -77,9 +85,17 @@ const actions = computed(() => [
   },
   {
     // type: ActionType.Redo,
-    icon: IconCode,
+    icon: IconNext,
     tip: '前进'
     // disabled: !canRedo.value,
+  },
+  {
+    icon: IconFlip,
+    tip: '翻转'
+  },
+  {
+    icon: IconCode,
+    tip: '代码'
   }
 ])
 
@@ -249,6 +265,18 @@ watchEffect(async () => {
   // console.log('svgContent', svgContent)
 })
 
+// 翻转
+const isRotate = ref(false)
+const handleRotate = () => {
+  isRotate.value = !isRotate.value
+}
+
+// 查看code
+const codeData = ref({})
+const handleCode = () => {
+  console.log(`output->svgContent`,svgContent)
+}
+
 const downloading = ref(false)
 const avatarRef = ref(null);
 // 下载图片
@@ -273,6 +301,11 @@ async function handleDownload() {
       downloading.value = false
     }, 800)
   }
+}
+
+// 随机生成
+const randomize = () => {
+  console.log(`output->activeShape`,activeShape)
 }
 </script>
 
@@ -331,7 +364,7 @@ async function handleDownload() {
     // }
 
     .opera_group {
-      width: 150px;
+      width: 220px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -351,6 +384,7 @@ async function handleDownload() {
       border-radius: 50%;
       transition: opacity 0.2s;
       opacity: 0.6;
+      cursor: pointer;
     }
 
     .btn_group {
