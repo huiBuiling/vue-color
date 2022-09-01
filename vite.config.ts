@@ -1,11 +1,12 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
+// import { visualizer } from 'rollup-plugin-visualizer'
 // import { createStyleImportPlugin } from 'vite-plugin-style-import'
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     vue(),
     // createStyleImportPlugin({
@@ -37,12 +38,22 @@ export default defineConfig({
        * @default: __svg__icons__dom__
        */
       // customDomId: '__svg__icons__dom__',
-    })
+    }),
+    // ...(mode === 'prerelease'
+      // ? [
+      //     visualizer({
+      //       open: true,
+      //       gzipSize: true,
+      //       brotliSize: true,
+      //       template: 'sunburst',
+      //     }),
+      //   ]
+      // : []),
   ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src')
-    }
-    // extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
-  }
-})
+    },
+    extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
+  },
+}))

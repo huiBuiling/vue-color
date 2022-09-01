@@ -7,7 +7,7 @@
         </div> -->
         <!-- <div class="avatar-payload" v-html="slideJson[0].svgRaw" /> -->
 
-        <div class="avatar-payload" v-html="svgContent"></div>
+        <div class="view" v-html="svgContent"></div>
 
       </div>
 
@@ -30,7 +30,7 @@
       <div class="view" v-for="(item, index) in slideJson" :key="index">
         <div class="t_title">头发</div>
         <div class="t_con">
-          <div class="con_item" v-for="itemC in item" :key="itemC.widgetShape" v-html="itemC.svgRaw" @click="onChange(itemC.widgetType, itemC.widgetShape)"></div>
+          <div class="con_item" v-for="itemC in item" :key="itemC.widgetShape" v-html="itemC.svgRaw"></div>
         </div>
       </div>
     </div>
@@ -38,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watchEffect } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import IconPrev from '@/assets/group/icons/icon-back.svg'
 import IconCode from '@/assets/group/icons/icon-next.svg'
 // import { iconsStore } from '@/store/icons'
@@ -73,58 +73,34 @@ const avatarOption: AvatarOption = reactive({
   widgets: initAvatarData
 })
 
-// 渲染avatar
-const svgContent = ref('')
-
-// 选中项
-const activeShape = ref({
-  type: '',
-  shape: ''
-})
-
-// 切换
-const onChange = (type: string, shape: string) => {
-  console.log(`output->onChange`,type, shape)
-  const _cur = {
-    ...avatarOption.widgets,
-    [type]: {
-      ...avatarOption.widgets[type],
-      "shape": shape,
-    }
-  }
-  avatarOption.widgets = _cur
-  console.log(`output->avatarOption`,avatarOption)
-}
-
-const getSvgInitData = () => {
-  // 层级处理
-  const sortedList = Object.entries(avatarOption.widgets).sort(
+console.log(`output->index`,avatarOption)
+// 层级处理
+const sortedList = Object.entries(avatarOption.widgets).sort(
     ([prevShape, prev], [nextShape, next]) => {
       const ix = prev.zIndex ?? AVATAR_Index[prevShape]?.zIndex ?? 0
       const iix = next.zIndex ?? AVATAR_Index[nextShape]?.zIndex ?? 0
       return ix - iix
     }
   )
+console.log(`output->index2`, sortedList)
 
-  const cur: Promise<string>[] = sortedList.map(
-    async ([widgetType, opt]) => {
-      if (opt.shape !== NONE && svgData?.[widgetType]?.[opt.shape]) {
-        const _cur = svgData[widgetType][opt.shape]
+// 获取所有svg
+const svgInitData: Promise<string>[] = sortedList.map(
+  async ([widgetType, opt]) => {
+    if (opt.shape !== NONE && svgData?.[widgetType]?.[opt.shape]) {
+      const _cur = svgData[widgetType][opt.shape]
 
-        // () => import('/src/assets/widgets/face/base.svg?import&raw')
-        return (await _cur()).default
-      }
-      return ''
+      // () => import('/src/assets/widgets/face/base.svg?import&raw')
+      console.log(`output->sortedList`, _cur)
+      return (await _cur()).default
     }
-  )
-  return {cur, sortedList}
-}
+    return ''
+  }
+)
+console.log(`output->index3`, svgInitData)
 
-const getSvgRawList = async () => {
-  // 获取所有svg
-  const svgInitData = getSvgInitData()
-  const cur = await Promise.all(svgInitData.cur).then((raw) => {
-    // <g transform="translate(0, 0)"> 导致显示位置错乱
+// 替换svg，生成指定svg
+const svgRawList = await Promise.all(svgInitData).then((raw) => {
     // raw.len = 11: ['<svg\n  width="200"\n  height="320"\n  viewBox="0 0 2…"white"\n      />\n    </clipPath>\n  </defs>\n</svg>', '<svg\n  width="96"\n  height="49"\n  viewBox="0 0 96 …20.4021)"\n      fill="black"\n    />\n  </g>\n</svg>', '<svg\n  width="32"\n  height="40"\n  viewBox="0 0 32 …1921"\n      stroke-width="4"\n    />\n  </g>\n</svg>', '<svg\n  width="149"\n  height="51"\n  viewBox="0 0 14…      stroke-linecap="round"\n    />\n  </g>\n</svg>', '<svg\n  width="240"\n  height="212"\n  viewBox="0 0 2…lack"\n      stroke-width="4"\n    />\n  </g>\n</svg>', '', '<svg\n  width="64"\n  height="64"\n  viewBox="0 0 64 …lack"\n      stroke-width="4"\n    />\n  </g>\n</svg>', '<svg\n  width="48"\n  height="52"\n  viewBox="0 0 48 …#000"\n      stroke-width="4"\n    />\n  </g>\n</svg>', '', '', '<svg\n  width="281"\n  height="93"\n  viewBox="0 0 28…    stroke-linejoin="round"\n    />\n  </g>\n</svg>\n']
     const _cur = raw.map((svgRaw, i) => {
       /**
@@ -132,23 +108,35 @@ const getSvgRawList = async () => {
        * widgetFillColor：获取填充色
        * svgRaw：完整svg数据
        
-        * -> 截取掉头部
-        * svgRaw.indexOf('>', svgRaw.indexOf('<svg'))：index eg：109
-        * - indexOf(searchString, ?position)
-        * - svgRaw.indexOf('<svg') => 0
-        * - slice(?start, ?end)
-        * 
-        * -> 截取掉尾部
-        * .replace('</svg>', '')
-        * 
-        * -> 颜色替换
-        * .replaceAll(searchValue, replaceValue)
-        * 部分部位svg 存在：fill="$fillColor" -> 替换为 widgetFillColor
-        */
-      const widgetFillColor = svgInitData?.sortedList[i][1].fillColor
+       * -> 截取掉头部
+       * svgRaw.indexOf('>', svgRaw.indexOf('<svg'))：index eg：109
+       * - indexOf(searchString, ?position)
+       * - svgRaw.indexOf('<svg') => 0
+       * - slice(?start, ?end)
+       * 
+       * -> 截取掉尾部
+       * .replace('</svg>', '')
+       * 
+       * -> 颜色替换
+       * .replaceAll(searchValue, replaceValue)
+       * 部分部位svg 存在：fill="$fillColor" -> 替换为 widgetFillColor
+       */
+      const widgetFillColor = sortedList[i][1].fillColor
       let content = svgRaw
         .slice(svgRaw.indexOf('>', svgRaw.indexOf('<svg')) + 1)
-        .replace('</svg>', '').replaceAll(
+        .replace('</svg>', '')
+
+      if (sortedList[i][0] === 'tops') {
+        // debugger
+        console.log(
+          `output->widgetFillColor`,
+          sortedList[i][0],
+          widgetFillColor,
+          content
+        )
+      }
+
+      content = content.replaceAll(
         '$fillColor',
         widgetFillColor || 'transparent'
       )
@@ -158,40 +146,32 @@ const getSvgRawList = async () => {
        * id=(eg:"vue-color-avatar-eyes"
        */
       return `
-        <g id="vue-color-avatar-${svgInitData?.sortedList[i][0]}">
+        <g id="vue-color-avatar-${sortedList[i][0]}">
           ${content}
         </g>
       `
     })
+    console.log(`output->_cur`, _cur)
     return _cur
   })
 
-  return cur
-}
-
-// 依赖追踪
-watchEffect(async () => {
-  console.log(`output->watchEffect`,avatarOption.widgets)
-  const svgRawList = await getSvgRawList()
-
-  const size = ref(280)
-  svgContent.value = `
-    <svg
-      width="280"
-      height="280"
-      viewBox="0 0 ${size.value / 0.7} ${size.value / 0.7}"
-      preserveAspectRatio="xMidYMax meet"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <g transform="translate(100, 65)">
-        ${svgRawList.join('')}
-      </g>
-    </svg>
-  `
+  // const svgContent = ref('')
+  // svgContent.value = `
+  //   <svg
+  //     width="280"
+  //     height="280"
+  //     viewBox="0 0 ${280 / 0.7} ${280 / 0.7}"
+  //     preserveAspectRatio="xMidYMax meet"
+  //     fill="none"
+  //     xmlns="http://www.w3.org/2000/svg"
+  //   >
+  //     <g transform="translate(100, 65)">
+  //       ${svgRawList.join('')}
+  //     </g>
+  //   </svg>
+  // `
 
   // console.log('svgContent', svgContent)
-})
 
 </script>
 
@@ -234,18 +214,11 @@ watchEffect(async () => {
       left: -28px;
     }
 
-    .avatar-payload{
-      position: relative;
-      z-index: 2;
-      width: 100%;
-      height: 100%;
+    svg{
+      width: 80%;
+      height: 80%;
+      margin: 10%;
     }
-
-    // svg{
-    //   width: 80%;
-    //   height: 80%;
-    //   margin: 10%;
-    // }
 
     .opera_group {
       width: 150px;
