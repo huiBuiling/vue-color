@@ -63,7 +63,7 @@
           </div>
 
           <button
-            id="copy-code-btn"
+            id="copy-code-btn"   
             class="copy-btn"
             :disabled="isCopying"
             :data-clipboard-text="JSON.stringify(avatarOption.widgets)"
