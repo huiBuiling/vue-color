@@ -578,7 +578,8 @@ onUnmounted(() => {
       font-weight: 600;
       line-height: 23px;
       margin: 40px 0 20px;
-      color: #fff;
+      // color: #fff;
+      color: #1e1d1d;
     }
 
     .t_con {
