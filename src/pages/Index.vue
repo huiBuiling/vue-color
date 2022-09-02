@@ -1,14 +1,9 @@
 <template>
   <div class="home">
-    <div class="left">
+    <div class="home_line"></div>
+    <div class="center">
       <div class="avatar" :style="{background: bgColor, transform: `rotateY(${isRotate ? '180deg':'0deg'})`}" ref="avatarRef">
-        <!-- <div class="view" v-for="(item, index) in slideJson.slice(0, 2)" :key="index">
-          <div class="view" :class="item[0].widgetType" v-html="item[0].svgRaw" />
-        </div> -->
-        <!-- <div class="avatar-payload" v-html="slideJson[0].svgRaw" /> -->
-
         <div class="avatar-payload" v-html="svgContent"></div>
-
       </div>
 
       <!-- opera_group  -->
@@ -50,24 +45,61 @@
     </div>
 
     <!-- 代码块 -->
-    
+    <!-- <pre><code class="code-content" v-html="codeData"></code></pre> -->
+    <!-- name="fade" -->
+    <transition >
+      <div class="mask" v-show="showCode" >
+        <div class="left" >
+          <div  class="left_top">
+            <span>
+              代码块
+            </span>
+            <img class="close" :src="actions[4].icon" :alt="actions[4].tip" @click="closeCode" />
+          </div>
+          
+          <div class="code_view">
+
+            <vue-json-pretty :deep="1" showLength showLineNumber showIcon :data="codeData" />
+          </div>
+
+          <button
+            id="copy-code-btn"
+            class="copy-btn"
+            :disabled="isCopying"
+            :data-clipboard-text="JSON.stringify(avatarOption.widgets)"
+            @click="copyCode"
+          >
+            复制代码
+          </button>
+        </div>
+      </div>
+     
+</transition>
+
+  
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watchEffect } from 'vue'
+  import type ClipboardJS from 'clipboard'
+import { computed, reactive, ref, watchEffect, onUnmounted } from 'vue'
 import ColorPicker from 'colorpicker-v3'
+import VueJsonPretty from 'vue-json-pretty';
+import 'vue-json-pretty/lib/styles.css';
 
 import IconPrev from '@/assets/group/icons/icon-back.svg'
 import IconNext from '@/assets/group/icons/icon-next.svg'
 import IconFlip from '@/assets/group/icons/icon-flip.svg'
 import IconCode from '@/assets/group/icons/icon-code.svg'
+import IconClose from '@/assets/group/icons/icon-close.svg'
 
 import { slideJson } from '@/utils/slide'
 import { svgData } from '@/utils/dynamic-data'
 import { AvatarOption, NONE } from "@/utils/shapeBaseTypes";
 import { initAvatarData } from "@/utils/initData";
 import { AVATAR_Index } from "@/utils/constant";
+// import { highlightJSON } from "@/utils/toJson";
 
 // import { iconsStore } from '@/store/icons'
 
@@ -96,6 +128,10 @@ const actions = computed(() => [
   {
     icon: IconCode,
     tip: '代码'
+  },
+  {
+    icon: IconClose,
+    tip: '关闭'
   }
 ])
 
@@ -272,9 +308,38 @@ const handleRotate = () => {
 }
 
 // 查看code
+const showCode = ref(false)
 const codeData = ref({})
 const handleCode = () => {
-  console.log(`output->svgContent`,svgContent)
+  // console.log(`output->svgContent`,JSON.stringify(svgContent.value))
+  // const _cur = JSON.stringify(avatarOption.widgets, null, 4)
+  // codeData.value = highlightJSON(_cur)
+  // console.log(`output->avatarOption.widgets`, _cur, codeData.value )
+
+  const _cur = JSON.stringify(avatarOption.widgets, null, 4)
+  codeData.value = JSON.parse(_cur)
+  showCode.value = true
+  console.log(`output->avatarOption.widgets`, _cur, codeData.value )
+}
+const closeCode = () => {
+  showCode.value = false
+}
+
+// copyCode
+let clipboard: ClipboardJS
+const isCopying = ref(false)
+const copyCode = async() => {
+  const { default: ClipboardJS } = await import('clipboard')
+  clipboard = new ClipboardJS('#copy-code-btn')
+
+  clipboard.on('success', (e: any) => {
+    isCopying.value = true
+
+    setTimeout(() => {
+      isCopying.value = false
+    }, 800)
+    e.clearSelection()
+  })
 }
 
 const downloading = ref(false)
@@ -307,7 +372,12 @@ async function handleDownload() {
 const randomize = () => {
   console.log(`output->activeShape`,activeShape)
 }
+
+onUnmounted(() => {
+  clipboard.destroy()
+})
 </script>
+
 
 <style lang="scss">
   @import 'colorpicker-v3/dist/style.css';
@@ -317,10 +387,79 @@ const randomize = () => {
   height: 100%;
   overflow: hidden;
   color: #a4b2c1;
-  background-color: #14161a;
+  // background-color: #14161a;
   display: flex;
+  // background: linear-gradient( 135deg, #81FFEF 10%, #F067B4 100%);
+  // background: radial-gradient(rgba(105, 103, 254, 0.8) 20%, rgba(105, 103, 254, 0.6) 40%, rgba(105, 103, 254, 0.4) 60%, rgba(105, 103, 254, 0.2) 80%, transparent 100%);
+  // background: radial-gradient(rgba(105, 103, 254, 0.8) 20%, #81FFEF 40%, rgba(105, 103, 254, 0.4) 60%, #F067B4 80%, transparent 100%);
+  // background: radial-gradient(rgba(105, 103, 254, 0.8) 10%, rgb(129, 255, 239, .5) 40%, rgba(105, 103, 254, 0.4) 60%, rgb(240, 103, 180, .4) 80%, transparent 100%);
+  .home_line{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width:  100%;
+    height: 100%;
+    background: radial-gradient(rgba(105, 103, 254, 0.8) 10%, rgb(129, 255, 239, .5) 40%, rgba(105, 103, 254, 0.4) 60%, rgb(240, 103, 180, .4) 80%, transparent 100%);
+    z-index: -1;
+    opacity: .7;
+  }
+  .mask{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width:  100%;
+    height: 100%;
+    background: rgb(0, 0, 0,.5);
+  }
 
-  .left {
+  .left{
+    width: 300px;
+    height: 100%;
+    background: #2c323a;
+    padding: 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    box-shadow: 10px 0 30px rgb(0, 0, 0,.5);
+
+    .left_top{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      text-align: left;
+    margin-bottom: 20px;
+      span{
+        font-size: 20px;
+        font-weight: bold;
+      }
+    }
+    .close{
+      background: #6a707e;
+    border-radius: 50%;
+    padding: 5px;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    }
+    .code_view{
+      background: #fff;
+      border-radius: 5px;
+    }
+
+    .copy-btn{
+      width: 100px;
+      // background-color: #404854;
+      background: rgba(255, 255, 255, .6);
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 10px;
+      margin-top: 20px;
+    }
+  }
+
+  .center {
     flex: 1;
     align-items: center;
     justify-content: center;
@@ -369,7 +508,8 @@ const randomize = () => {
       align-items: center;
       justify-content: space-between;
       padding: 10px;
-      background-color: #2a2f37;
+      // background-color: #2a2f37;
+      background: rgba(255, 255, 255, .6);
       border-radius: 100px;
       margin: 50px auto;
     }
@@ -398,7 +538,8 @@ const randomize = () => {
     .btn_i {
       width: 100px;
       padding: 10px;
-      background-color: #404854;
+      // background-color: #404854;
+      background: rgba(255, 255, 255, .6);
       border-radius: 10px;
       font-weight: 600;
       cursor: pointer;
@@ -408,7 +549,7 @@ const randomize = () => {
 
   .right {
     width: 326px;
-    border-left: 1px solid #3c3b3b;
+    border-left: 3px solid rgba(255, 255, 255, .6);
     padding: 0 20px 60px;
     text-align: left;
     overflow-y: auto;
@@ -437,6 +578,7 @@ const randomize = () => {
       font-weight: 600;
       line-height: 23px;
       margin: 40px 0 20px;
+      color: #fff;
     }
 
     .t_con {
@@ -450,8 +592,10 @@ const randomize = () => {
       height: 80px;
       // background-color: #2c323a;
       // border: 1px solid #2c323a;
-      background-color: #2b2c2e26;
-      border: 1px solid #2b2c2e26;
+      // background-color: #2b2c2e26;
+      // border: 2px solid #2b2c2e26;
+      background: rgba(255, 255, 255, .6);
+      border: 2px solid rgba(255, 255, 255, .6);
       border-radius: 10px;
       margin: 10px;
       cursor: pointer;
@@ -460,7 +604,7 @@ const randomize = () => {
 
     .active,
     .con_item:hover {
-      border: 1px solid #6967fe;
+      border: 2px solid #6967fe;
     }
 
     svg {
@@ -476,5 +620,45 @@ const randomize = () => {
       font-weight: normal;
     }
   }
+}
+
+
+/* 设置持续时间和动画函数 */
+// .fade-enter,.fade-leave-active {
+//   transition: all .8s ease;
+// }
+// .fade-enter{
+//   // transform: translateX(300px);
+//   left: 0;
+//   opacity: 0;
+// }
+
+// .fade-enter-active{
+//   left: 0;
+// }
+
+// .fade-leave-to{
+//   transform: translateX(-300px);
+//   // opacity: 0;
+// }
+
+// 没有这只name，就是v-xx, 设置后就是 [name]-xx
+.v-enter-active,
+.v-leave-active {
+  transition: opacity .7s ease;
+}
+
+.v-enter-from{
+  opacity: 0;
+  transform: translateX(-300px);
+}
+
+.v-enter-to{
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.v-leave-to {
+  opacity: 0;
 }
 </style>
